@@ -8,7 +8,6 @@ use std::{
     sync::{Mutex, RwLock},
     time::{Duration, Instant, SystemTime},
 };
-
 use anyhow::Result;
 use bytes::Bytes;
 use rand::Rng;
@@ -18,7 +17,6 @@ use serde_derive::{Deserialize, Serialize};
 use serde_json;
 use sodiumoxide::base64;
 use sodiumoxide::crypto::sign;
-
 use crate::{
     compress::{compress, decompress},
     log,
@@ -27,7 +25,6 @@ use crate::{
         encrypt_vec_or_original, symmetric_crypt,
     },
 };
-
 pub const RENDEZVOUS_TIMEOUT: u64 = 12_000;
 pub const CONNECT_TIMEOUT: u64 = 18_000;
 pub const READ_TIMEOUT: u64 = 18_000;
@@ -40,15 +37,12 @@ pub const COMPRESS_LEVEL: i32 = 3;
 const SERIAL: i32 = 3;
 const PASSWORD_ENC_VERSION: &str = "00";
 pub const ENCRYPT_MAX_LEN: usize = 128; // used for password, pin, etc, not for all
-
 #[cfg(target_os = "macos")]
 lazy_static::lazy_static! {
     pub static ref ORG: RwLock<String> = RwLock::new("com.carriez".to_owned());
 }
-
 type Size = (i32, i32, i32, i32);
 type KeyPair = (Vec<u8>, Vec<u8>);
-
 lazy_static::lazy_static! {
     static ref CONFIG: RwLock<Config> = RwLock::new(Config::load());
     static ref CONFIG2: RwLock<Config2> = RwLock::new(Config2::load());
@@ -73,16 +67,13 @@ lazy_static::lazy_static! {
     pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
 }
-
 lazy_static::lazy_static! {
     pub static ref APP_DIR: RwLock<String> = Default::default();
 }
-
 #[cfg(any(target_os = "android", target_os = "ios"))]
 lazy_static::lazy_static! {
     pub static ref APP_HOME_DIR: RwLock<String> = Default::default();
 }
-
 pub const LINK_DOCS_HOME: &str = "https://rustdesk.com/docs/en/";
 pub const LINK_DOCS_X11_REQUIRED: &str = "https://rustdesk.com/docs/en/manual/linux/#x11-required";
 pub const LINK_HEADLESS_LINUX_SUPPORT: &str =
@@ -94,29 +85,23 @@ lazy_static::lazy_static! {
         ("rustdesk x11 headless", LINK_HEADLESS_LINUX_SUPPORT),
         ]);
 }
-
 const CHARS: &[char] = &[
     '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
     'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
-
 pub const RENDEZVOUS_SERVERS: &[&str] = &["rs-ny.rustdesk.com"];
 pub const PUBLIC_RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
-
 pub const RS_PUB_KEY: &str = match option_env!("RS_PUB_KEY") {
     Some(key) if !key.is_empty() => key,
     _ => PUBLIC_RS_PUB_KEY,
 };
-
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
-
 macro_rules! serde_field_string {
     ($default_func:ident, $de_func:ident, $default_expr:expr) => {
         fn $default_func() -> String {
             $default_expr
         }
-
         fn $de_func<'de, D>(deserializer: D) -> Result<String, D::Error>
         where
             D: de::Deserializer<'de>,
@@ -130,7 +115,6 @@ macro_rules! serde_field_string {
         }
     };
 }
-
 macro_rules! serde_field_bool {
     ($struct_name: ident, $field_name: literal, $func: ident, $default: literal) => {
         #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -150,7 +134,6 @@ macro_rules! serde_field_bool {
         }
         impl Deref for $struct_name {
             type Target = bool;
-
             fn deref(&self) -> &Self::Target {
                 &self.v
             }
@@ -162,13 +145,11 @@ macro_rules! serde_field_bool {
         }
     };
 }
-
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum NetworkType {
     Direct,
     ProxySocks,
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config {
     #[serde(
@@ -190,7 +171,6 @@ pub struct Config {
     #[serde(default, deserialize_with = "deserialize_hashmap_string_bool")]
     keys_confirmed: HashMap<String, bool>,
 }
-
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Socks5Server {
     #[serde(default, deserialize_with = "deserialize_string")]
@@ -200,7 +180,6 @@ pub struct Socks5Server {
     #[serde(default, deserialize_with = "deserialize_string")]
     pub password: String,
 }
-
 // more variable configs
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Config2 {
@@ -214,21 +193,17 @@ pub struct Config2 {
     unlock_pin: String,
     #[serde(default, deserialize_with = "deserialize_string")]
     trusted_devices: String,
-
     #[serde(default)]
     socks: Option<Socks5Server>,
-
     // the other scalar value must before this
     #[serde(default, deserialize_with = "deserialize_hashmap_string_string")]
     pub options: HashMap<String, String>,
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Resolution {
     pub w: i32,
     pub h: i32,
 }
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct PeerConfig {
     #[serde(default, deserialize_with = "deserialize_vec_u8")]
@@ -317,14 +292,12 @@ pub struct PeerConfig {
         skip_serializing_if = "String::is_empty"
     )]
     pub use_all_my_displays_for_the_remote_session: String,
-
     #[serde(
         default,
         deserialize_with = "deserialize_hashmap_resolutions",
         skip_serializing_if = "HashMap::is_empty"
     )]
     pub custom_resolutions: HashMap<String, Resolution>,
-
     // The other scalar value must before this
     #[serde(
         default,
@@ -340,7 +313,6 @@ pub struct PeerConfig {
     #[serde(default)]
     pub transfer: TransferSerde,
 }
-
 impl Default for PeerConfig {
     fn default() -> Self {
         Self {
@@ -379,7 +351,6 @@ impl Default for PeerConfig {
         }
     }
 }
-
 #[derive(Debug, PartialEq, Default, Serialize, Deserialize, Clone)]
 pub struct PeerInfoSerde {
     #[serde(default, deserialize_with = "deserialize_string")]
@@ -389,7 +360,6 @@ pub struct PeerInfoSerde {
     #[serde(default, deserialize_with = "deserialize_string")]
     pub platform: String,
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone, PartialEq)]
 pub struct TransferSerde {
     #[serde(default, deserialize_with = "deserialize_vec_string")]
@@ -397,12 +367,10 @@ pub struct TransferSerde {
     #[serde(default, deserialize_with = "deserialize_vec_string")]
     pub read_jobs: Vec<String>,
 }
-
 #[inline]
 pub fn get_online_state() -> i64 {
     *ONLINE.lock().unwrap().values().max().unwrap_or(&0)
 }
-
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn patch(path: PathBuf) -> PathBuf {
     if let Some(_tmp) = path.to_str() {
@@ -432,7 +400,6 @@ fn patch(path: PathBuf) -> PathBuf {
     }
     path
 }
-
 impl Config2 {
     fn load() -> Config2 {
         let mut config = Config::load_::<Config2>("2");
@@ -453,11 +420,9 @@ impl Config2 {
         }
         config
     }
-
     pub fn file() -> PathBuf {
         Config::file_("2")
     }
-
     fn store(&self) {
         let mut config = self.clone();
         if let Some(mut socks) = config.socks {
@@ -469,11 +434,9 @@ impl Config2 {
             encrypt_str_or_original(&config.unlock_pin, PASSWORD_ENC_VERSION, ENCRYPT_MAX_LEN);
         Config::store_(&config, "2");
     }
-
     pub fn get() -> Config2 {
         return CONFIG2.read().unwrap().clone();
     }
-
     pub fn set(cfg: Config2) -> bool {
         let mut lock = CONFIG2.write().unwrap();
         if *lock == cfg {
@@ -484,7 +447,6 @@ impl Config2 {
         true
     }
 }
-
 pub fn load_path<T: serde::Serialize + serde::de::DeserializeOwned + Default + std::fmt::Debug>(
     file: PathBuf,
 ) -> T {
@@ -502,7 +464,6 @@ pub fn load_path<T: serde::Serialize + serde::de::DeserializeOwned + Default + s
     };
     cfg
 }
-
 #[inline]
 pub fn store_path<T: serde::Serialize>(path: PathBuf, cfg: T) -> crate::ResultType<()> {
     #[cfg(not(windows))]
@@ -519,7 +480,6 @@ pub fn store_path<T: serde::Serialize>(path: PathBuf, cfg: T) -> crate::ResultTy
         Ok(confy::store_path(path, cfg)?)
     }
 }
-
 impl Config {
     fn load_<T: serde::Serialize + serde::de::DeserializeOwned + Default + std::fmt::Debug>(
         suffix: &str,
@@ -531,14 +491,12 @@ impl Config {
         }
         cfg
     }
-
     fn store_<T: serde::Serialize>(config: &T, suffix: &str) {
         let file = Self::file_(suffix);
         if let Err(err) = store_path(file, config) {
             log::error!("Failed to store {suffix} config: {err}");
         }
     }
-
     fn load() -> Config {
         let mut config = Config::load_::<Config>("");
         let mut store = false;
@@ -581,7 +539,6 @@ impl Config {
         }
         config
     }
-
     fn store(&self) {
         let mut config = self.clone();
         config.password =
@@ -590,20 +547,16 @@ impl Config {
         config.id = "".to_owned();
         Config::store_(&config, "");
     }
-
     pub fn file() -> PathBuf {
         Self::file_("")
     }
-
     fn file_(suffix: &str) -> PathBuf {
         let name = format!("{}{}", *APP_NAME.read().unwrap(), suffix);
         Config::with_extension(Self::path(name))
     }
-
     pub fn is_empty(&self) -> bool {
         (self.id.is_empty() && self.enc_id.is_empty()) || self.key_pair.0.is_empty()
     }
-
     pub fn get_home() -> PathBuf {
         #[cfg(any(target_os = "android", target_os = "ios"))]
         return PathBuf::from(APP_HOME_DIR.read().unwrap().as_str());
@@ -618,7 +571,6 @@ impl Config {
             }
         }
     }
-
     pub fn path<P: AsRef<Path>>(p: P) -> PathBuf {
         #[cfg(any(target_os = "android", target_os = "ios"))]
         {
@@ -643,7 +595,6 @@ impl Config {
             "".into()
         }
     }
-
     #[allow(unreachable_code)]
     pub fn log_path() -> PathBuf {
         #[cfg(target_os = "macos")]
@@ -674,7 +625,6 @@ impl Config {
         }
         "".into()
     }
-
     pub fn ipc_path(postfix: &str) -> String {
         #[cfg(windows)]
         {
@@ -701,7 +651,6 @@ impl Config {
             path.to_str().unwrap_or("").to_owned()
         }
     }
-
     pub fn icon_path() -> PathBuf {
         let mut path = Self::path("icons");
         if fs::create_dir_all(&path).is_err() {
@@ -709,7 +658,6 @@ impl Config {
         }
         path
     }
-
     #[inline]
     pub fn get_any_listen_addr(is_ipv4: bool) -> SocketAddr {
         if is_ipv4 {
@@ -718,7 +666,6 @@ impl Config {
             SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), 0)
         }
     }
-
     pub fn get_rendezvous_server() -> String {
         let mut rendezvous_server = EXE_RENDEZVOUS_SERVER.read().unwrap().clone();
         if rendezvous_server.is_empty() {
@@ -741,7 +688,6 @@ impl Config {
         }
         rendezvous_server
     }
-
     pub fn get_rendezvous_servers() -> Vec<String> {
         let s = EXE_RENDEZVOUS_SERVER.read().unwrap().clone();
         if !s.is_empty() {
@@ -768,11 +714,9 @@ impl Config {
         }
         return RENDEZVOUS_SERVERS.iter().map(|x| x.to_string()).collect();
     }
-
     pub fn reset_online() {
         *ONLINE.lock().unwrap() = Default::default();
     }
-
     pub fn update_latency(host: &str, latency: i64) {
         ONLINE.lock().unwrap().insert(host.to_owned(), latency);
         let mut host = "".to_owned();
@@ -793,7 +737,6 @@ impl Config {
             }
         }
     }
-
     pub fn set_id(id: &str) {
         let mut config = CONFIG.write().unwrap();
         if id == config.id {
@@ -802,7 +745,6 @@ impl Config {
         config.id = id.into();
         config.store();
     }
-
     pub fn set_nat_type(nat_type: i32) {
         let mut config = CONFIG2.write().unwrap();
         if nat_type == config.nat_type {
@@ -811,11 +753,9 @@ impl Config {
         config.nat_type = nat_type;
         config.store();
     }
-
     pub fn get_nat_type() -> i32 {
         CONFIG2.read().unwrap().nat_type
     }
-
     pub fn set_serial(serial: i32) {
         let mut config = CONFIG2.write().unwrap();
         if serial == config.serial {
@@ -824,11 +764,9 @@ impl Config {
         config.serial = serial;
         config.store();
     }
-
     pub fn get_serial() -> i32 {
         std::cmp::max(CONFIG2.read().unwrap().serial, SERIAL)
     }
-
     fn get_auto_id() -> Option<String> {
         #[cfg(any(target_os = "android", target_os = "ios"))]
         {
@@ -838,7 +776,6 @@ impl Config {
                     .to_string(),
             );
         }
-
         #[cfg(not(any(target_os = "android", target_os = "ios")))]
         {
             let mut id = 0u32;
@@ -853,18 +790,15 @@ impl Config {
             }
         }
     }
-
     pub fn get_auto_password(length: usize) -> String {
         let mut rng = rand::thread_rng();
         (0..length)
             .map(|_| CHARS[rng.gen::<usize>() % CHARS.len()])
             .collect()
     }
-
     pub fn get_key_confirmed() -> bool {
         CONFIG.read().unwrap().key_confirmed
     }
-
     pub fn set_key_confirmed(v: bool) {
         let mut config = CONFIG.write().unwrap();
         if config.key_confirmed == v {
@@ -876,11 +810,9 @@ impl Config {
         }
         config.store();
     }
-
     pub fn get_host_key_confirmed(host: &str) -> bool {
         matches!(CONFIG.read().unwrap().keys_confirmed.get(host), Some(true))
     }
-
     pub fn set_host_key_confirmed(host: &str, v: bool) {
         if Self::get_host_key_confirmed(host) == v {
             return;
@@ -889,7 +821,6 @@ impl Config {
         config.keys_confirmed.insert(host.to_owned(), v);
         config.store();
     }
-
     pub fn get_key_pair() -> KeyPair {
         // lock here to make sure no gen_keypair more than once
         // no use of CONFIG directly here to ensure no recursive calling in Config::load because of password dec which calling this function
@@ -912,7 +843,6 @@ impl Config {
         *lock = Some(config.key_pair.clone());
         config.key_pair
     }
-
     pub fn get_id() -> String {
         let mut id = CONFIG.read().unwrap().id.clone();
         if id.is_empty() {
@@ -923,7 +853,6 @@ impl Config {
         }
         id
     }
-
     pub fn get_id_or(b: String) -> String {
         let a = CONFIG.read().unwrap().id.clone();
         if a.is_empty() {
@@ -932,19 +861,16 @@ impl Config {
             a
         }
     }
-
     pub fn get_options() -> HashMap<String, String> {
         let mut res = DEFAULT_SETTINGS.read().unwrap().clone();
         res.extend(CONFIG2.read().unwrap().options.clone());
         res.extend(OVERWRITE_SETTINGS.read().unwrap().clone());
         res
     }
-
     #[inline]
     fn purify_options(v: &mut HashMap<String, String>) {
         v.retain(|k, v| is_option_can_save(&OVERWRITE_SETTINGS, k, &DEFAULT_SETTINGS, v));
     }
-
     pub fn set_options(mut v: HashMap<String, String>) {
         Self::purify_options(&mut v);
         let mut config = CONFIG2.write().unwrap();
@@ -954,7 +880,6 @@ impl Config {
         config.options = v;
         config.store();
     }
-
     pub fn get_option(k: &str) -> String {
         get_or(
             &OVERWRITE_SETTINGS,
@@ -964,7 +889,6 @@ impl Config {
         )
         .unwrap_or_default()
     }
-
     pub fn set_option(k: String, v: String) {
         if !is_option_can_save(&OVERWRITE_SETTINGS, &k, &DEFAULT_SETTINGS, &v) {
             return;
@@ -980,7 +904,6 @@ impl Config {
             config.store();
         }
     }
-
     pub fn update_id() {
         // to-do: how about if one ip register a lot of ids?
         let id = Self::get_id();
@@ -989,7 +912,6 @@ impl Config {
         Config::set_id(&new_id);
         log::info!("id updated from {} to {}", id, new_id);
     }
-
     pub fn set_permanent_password(password: &str) {
         if HARD_SETTINGS
             .read()
@@ -1007,7 +929,6 @@ impl Config {
         config.store();
         Self::clear_trusted_devices();
     }
-
     pub fn get_permanent_password() -> String {
         let mut password = CONFIG.read().unwrap().password.clone();
         if password.is_empty() {
@@ -1017,7 +938,6 @@ impl Config {
         }
         password
     }
-
     pub fn set_salt(salt: &str) {
         let mut config = CONFIG.write().unwrap();
         if salt == config.salt {
@@ -1026,7 +946,6 @@ impl Config {
         config.salt = salt.into();
         config.store();
     }
-
     pub fn get_salt() -> String {
         let mut salt = CONFIG.read().unwrap().salt.clone();
         if salt.is_empty() {
@@ -1035,7 +954,6 @@ impl Config {
         }
         salt
     }
-
     pub fn set_socks(socks: Option<Socks5Server>) {
         let mut config = CONFIG2.write().unwrap();
         if config.socks == socks {
@@ -1044,7 +962,6 @@ impl Config {
         config.socks = socks;
         config.store();
     }
-
     #[inline]
     fn get_socks_from_custom_client_advanced_settings(
         settings: &HashMap<String, String>,
@@ -1062,7 +979,6 @@ impl Config {
                 .unwrap_or_default(),
         })
     }
-
     pub fn get_socks() -> Option<Socks5Server> {
         Self::get_socks_from_custom_client_advanced_settings(&OVERWRITE_SETTINGS.read().unwrap())
             .or(CONFIG2.read().unwrap().socks.clone())
@@ -1070,12 +986,10 @@ impl Config {
                 &DEFAULT_SETTINGS.read().unwrap(),
             ))
     }
-
     #[inline]
     pub fn is_proxy() -> bool {
         Self::get_network_type() != NetworkType::Direct
     }
-
     pub fn get_network_type() -> NetworkType {
         if OVERWRITE_SETTINGS
             .read()
@@ -1098,11 +1012,9 @@ impl Config {
         }
         NetworkType::Direct
     }
-
     pub fn get_unlock_pin() -> String {
         CONFIG2.read().unwrap().unlock_pin.clone()
     }
-
     pub fn set_unlock_pin(pin: &str) {
         let mut config = CONFIG2.write().unwrap();
         if pin == config.unlock_pin {
@@ -1111,11 +1023,9 @@ impl Config {
         config.unlock_pin = pin.to_string();
         config.store();
     }
-
     pub fn get_trusted_devices_json() -> String {
         serde_json::to_string(&Self::get_trusted_devices()).unwrap_or_default()
     }
-
     pub fn get_trusted_devices() -> Vec<TrustedDevice> {
         let (devices, synced) = TRUSTED_DEVICES.read().unwrap().clone();
         if synced {
@@ -1137,7 +1047,6 @@ impl Config {
             Default::default()
         }
     }
-
     fn set_trusted_devices(mut trusted_devices: Vec<TrustedDevice>) {
         trusted_devices.retain(|d| !d.outdate());
         let devices = serde_json::to_string(&trusted_devices).unwrap_or_default();
@@ -1152,28 +1061,23 @@ impl Config {
         config.store();
         *TRUSTED_DEVICES.write().unwrap() = (trusted_devices, true);
     }
-
     pub fn add_trusted_device(device: TrustedDevice) {
         let mut devices = Self::get_trusted_devices();
         devices.retain(|d| d.hwid != device.hwid);
         devices.push(device);
         Self::set_trusted_devices(devices);
     }
-
     pub fn remove_trusted_devices(hwids: &Vec<Bytes>) {
         let mut devices = Self::get_trusted_devices();
         devices.retain(|d| !hwids.contains(&d.hwid));
         Self::set_trusted_devices(devices);
     }
-
     pub fn clear_trusted_devices() {
         Self::set_trusted_devices(Default::default());
     }
-
     pub fn get() -> Config {
         return CONFIG.read().unwrap().clone();
     }
-
     pub fn set(cfg: Config) -> bool {
         let mut lock = CONFIG.write().unwrap();
         if *lock == cfg {
@@ -1183,7 +1087,6 @@ impl Config {
         lock.store();
         true
     }
-
     fn with_extension(path: PathBuf) -> PathBuf {
         let ext = path.extension();
         if let Some(ext) = ext {
@@ -1194,9 +1097,7 @@ impl Config {
         }
     }
 }
-
 const PEERS: &str = "peers";
-
 impl PeerConfig {
     pub fn load(id: &str) -> PeerConfig {
         let _lock = CONFIG.read().unwrap();
@@ -1232,7 +1133,6 @@ impl PeerConfig {
             }
         }
     }
-
     pub fn store(&self, id: &str) {
         let _lock = CONFIG.read().unwrap();
         let mut config = self.clone();
@@ -1248,11 +1148,9 @@ impl PeerConfig {
         }
         NEW_STORED_PEER_CONFIG.lock().unwrap().insert(id.to_owned());
     }
-
     pub fn remove(id: &str) {
         fs::remove_file(Self::path(id)).ok();
     }
-
     fn path(id: &str) -> PathBuf {
         //If the id contains invalid chars, encode it
         let forbidden_paths = Regex::new(r".*[<>:/\\|\?\*].*");
@@ -1271,7 +1169,6 @@ impl PeerConfig {
         }
         Config::with_extension(Config::path(path))
     }
-
     pub fn peers(id_filters: Option<Vec<String>>) -> Vec<(String, SystemTime, PeerConfig)> {
         if let Ok(peers) = Config::path(PEERS).read_dir() {
             if let Ok(peers) = peers
@@ -1290,7 +1187,6 @@ impl PeerConfig {
                             .map(|p| p.to_str().unwrap_or(""))
                             .unwrap_or("")
                             .to_owned();
-
                         let id_decoded_string = if id.starts_with("base64_") && id.len() != 7 {
                             let id_decoded = base64::decode(&id[7..], base64::Variant::Original)
                                 .unwrap_or_default();
@@ -1322,11 +1218,9 @@ impl PeerConfig {
         }
         Default::default()
     }
-
     pub fn exists(id: &str) -> bool {
         Self::path(id).exists()
     }
-
     serde_field_string!(
         default_view_style,
         deserialize_view_style,
@@ -1357,14 +1251,12 @@ impl PeerConfig {
         deserialize_use_all_my_displays_for_the_remote_session,
         UserDefaultConfig::read(keys::OPTION_USE_ALL_MY_DISPLAYS_FOR_THE_REMOTE_SESSION)
     );
-
     fn default_custom_image_quality() -> Vec<i32> {
         let f: f64 = UserDefaultConfig::read(keys::OPTION_CUSTOM_IMAGE_QUALITY)
             .parse()
             .unwrap_or(50.0);
         vec![f as _]
     }
-
     fn deserialize_custom_image_quality<'de, D>(deserializer: D) -> Result<Vec<i32>, D::Error>
     where
         D: de::Deserializer<'de>,
@@ -1376,7 +1268,6 @@ impl PeerConfig {
             Ok(Self::default_custom_image_quality())
         }
     }
-
     fn default_options() -> HashMap<String, String> {
         let mut mp: HashMap<String, String> = Default::default();
         [
@@ -1394,7 +1285,6 @@ impl PeerConfig {
         mp
     }
 }
-
 serde_field_bool!(
     ShowRemoteCursor,
     "show_remote_cursor",
@@ -1407,7 +1297,6 @@ serde_field_bool!(
     default_follow_remote_cursor,
     "FollowRemoteCursor::default_follow_remote_cursor"
 );
-
 serde_field_bool!(
     FollowRemoteWindow,
     "follow_remote_window",
@@ -1450,28 +1339,24 @@ serde_field_bool!(
     default_privacy_mode,
     "PrivacyMode::default_privacy_mode"
 );
-
 serde_field_bool!(
     AllowSwapKey,
     "allow_swap_key",
     default_allow_swap_key,
     "AllowSwapKey::default_allow_swap_key"
 );
-
 serde_field_bool!(
     ViewOnly,
     "view_only",
     default_view_only,
     "ViewOnly::default_view_only"
 );
-
 serde_field_bool!(
     SyncInitClipboard,
     "sync-init-clipboard",
     default_sync_init_clipboard,
     "SyncInitClipboard::default_sync_init_clipboard"
 );
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct LocalConfig {
     #[serde(default, deserialize_with = "deserialize_string")]
@@ -1488,30 +1373,24 @@ pub struct LocalConfig {
     #[serde(default, deserialize_with = "deserialize_hashmap_string_string")]
     ui_flutter: HashMap<String, String>,
 }
-
 impl LocalConfig {
     fn load() -> LocalConfig {
         Config::load_::<LocalConfig>("_local")
     }
-
     fn store(&self) {
         Config::store_(self, "_local");
     }
-
     pub fn get_kb_layout_type() -> String {
         LOCAL_CONFIG.read().unwrap().kb_layout_type.clone()
     }
-
     pub fn set_kb_layout_type(kb_layout_type: String) {
         let mut config = LOCAL_CONFIG.write().unwrap();
         config.kb_layout_type = kb_layout_type;
         config.store();
     }
-
     pub fn get_size() -> Size {
         LOCAL_CONFIG.read().unwrap().size
     }
-
     pub fn set_size(x: i32, y: i32, w: i32, h: i32) {
         let mut config = LOCAL_CONFIG.write().unwrap();
         let size = (x, y, w, h);
@@ -1521,7 +1400,6 @@ impl LocalConfig {
         config.size = size;
         config.store();
     }
-
     pub fn set_remote_id(remote_id: &str) {
         let mut config = LOCAL_CONFIG.write().unwrap();
         if remote_id == config.remote_id {
@@ -1530,11 +1408,9 @@ impl LocalConfig {
         config.remote_id = remote_id.into();
         config.store();
     }
-
     pub fn get_remote_id() -> String {
         LOCAL_CONFIG.read().unwrap().remote_id.clone()
     }
-
     pub fn set_fav(fav: Vec<String>) {
         let mut lock = LOCAL_CONFIG.write().unwrap();
         if lock.fav == fav {
@@ -1543,11 +1419,9 @@ impl LocalConfig {
         lock.fav = fav;
         lock.store();
     }
-
     pub fn get_fav() -> Vec<String> {
         LOCAL_CONFIG.read().unwrap().fav.clone()
     }
-
     pub fn get_option(k: &str) -> String {
         get_or(
             &OVERWRITE_LOCAL_SETTINGS,
@@ -1557,7 +1431,6 @@ impl LocalConfig {
         )
         .unwrap_or_default()
     }
-
     pub fn set_option(k: String, v: String) {
         if !is_option_can_save(&OVERWRITE_LOCAL_SETTINGS, &k, &DEFAULT_LOCAL_SETTINGS, &v) {
             return;
@@ -1580,7 +1453,6 @@ impl LocalConfig {
             config.store();
         }
     }
-
     pub fn get_flutter_option(k: &str) -> String {
         get_or(
             &OVERWRITE_LOCAL_SETTINGS,
@@ -1590,7 +1462,6 @@ impl LocalConfig {
         )
         .unwrap_or_default()
     }
-
     pub fn set_flutter_option(k: String, v: String) {
         let mut config = LOCAL_CONFIG.write().unwrap();
         let v2 = if v.is_empty() { None } else { Some(&v) };
@@ -1604,7 +1475,6 @@ impl LocalConfig {
         }
     }
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct DiscoveryPeer {
     #[serde(default, deserialize_with = "deserialize_string")]
@@ -1620,19 +1490,16 @@ pub struct DiscoveryPeer {
     #[serde(default, deserialize_with = "deserialize_hashmap_string_string")]
     pub ip_mac: HashMap<String, String>,
 }
-
 impl DiscoveryPeer {
     pub fn is_same_peer(&self, other: &DiscoveryPeer) -> bool {
         self.id == other.id && self.username == other.username
     }
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct LanPeers {
     #[serde(default, deserialize_with = "deserialize_vec_discoverypeer")]
     pub peers: Vec<DiscoveryPeer>,
 }
-
 impl LanPeers {
     pub fn load() -> LanPeers {
         let _lock = CONFIG.read().unwrap();
@@ -1644,7 +1511,6 @@ impl LanPeers {
             }
         }
     }
-
     pub fn store(peers: &[DiscoveryPeer]) {
         let f = LanPeers {
             peers: peers.to_owned(),
@@ -1653,7 +1519,6 @@ impl LanPeers {
             log::error!("Failed to store lan peers: {}", err);
         }
     }
-
     pub fn modify_time() -> crate::ResultType<u64> {
         let p = Config::file_("_lan_peers");
         Ok(fs::metadata(p)?
@@ -1662,13 +1527,11 @@ impl LanPeers {
             .as_millis() as _)
     }
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct UserDefaultConfig {
     #[serde(default, deserialize_with = "deserialize_hashmap_string_string")]
     options: HashMap<String, String>,
 }
-
 impl UserDefaultConfig {
     fn read(key: &str) -> String {
         let mut cfg = USER_DEFAULT_CONFIG.write().unwrap();
@@ -1679,16 +1542,13 @@ impl UserDefaultConfig {
         }
         cfg.0.get(key)
     }
-
     pub fn load() -> UserDefaultConfig {
         Config::load_::<UserDefaultConfig>("_default")
     }
-
     #[inline]
     fn store(&self) {
         Config::store_(self, "_default");
     }
-
     pub fn get(&self, key: &str) -> String {
         match key {
             keys::OPTION_VIEW_STYLE => self.get_string(key, "original", vec!["adaptive"]),
@@ -1710,7 +1570,6 @@ impl UserDefaultConfig {
                 .unwrap_or_default(),
         }
     }
-
     pub fn set(&mut self, key: String, value: String) {
         if !is_option_can_save(
             &OVERWRITE_DISPLAY_SETTINGS,
@@ -1727,7 +1586,6 @@ impl UserDefaultConfig {
         }
         self.store();
     }
-
     #[inline]
     fn get_string(&self, key: &str, default: &str, others: Vec<&str>) -> String {
         match self.get_after(key) {
@@ -1741,7 +1599,6 @@ impl UserDefaultConfig {
             None => default.to_owned(),
         }
     }
-
     #[inline]
     fn get_double_string(&self, key: &str, default: f64, min: f64, max: f64) -> String {
         match self.get_after(key) {
@@ -1756,7 +1613,6 @@ impl UserDefaultConfig {
             None => default.to_string(),
         }
     }
-
     fn get_after(&self, k: &str) -> Option<String> {
         get_or(
             &OVERWRITE_DISPLAY_SETTINGS,
@@ -1766,7 +1622,6 @@ impl UserDefaultConfig {
         )
     }
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct AbPeer {
     #[serde(
@@ -1808,7 +1663,6 @@ pub struct AbPeer {
     #[serde(default, deserialize_with = "deserialize_vec_string")]
     pub tags: Vec<String>,
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct AbEntry {
     #[serde(
@@ -1834,13 +1688,11 @@ pub struct AbEntry {
     )]
     pub tag_colors: String,
 }
-
 impl AbEntry {
     pub fn personal(&self) -> bool {
         self.name == "My address book" || self.name == "Legacy address book"
     }
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Ab {
     #[serde(
@@ -1852,13 +1704,11 @@ pub struct Ab {
     #[serde(default, deserialize_with = "deserialize_vec_abentry")]
     pub ab_entries: Vec<AbEntry>,
 }
-
 impl Ab {
     fn path() -> PathBuf {
         let filename = format!("{}_ab", APP_NAME.read().unwrap().clone());
         Config::path(filename)
     }
-
     pub fn store(json: String) {
         if let Ok(mut file) = std::fs::File::create(Self::path()) {
             let data = compress(json.as_bytes());
@@ -1873,7 +1723,6 @@ impl Ab {
             }
         };
     }
-
     pub fn load() -> Ab {
         if let Ok(mut file) = std::fs::File::open(Self::path()) {
             let mut data = vec![];
@@ -1889,12 +1738,10 @@ impl Ab {
         Self::remove();
         Ab::default()
     }
-
     pub fn remove() {
         std::fs::remove_file(Self::path()).ok();
     }
 }
-
 // use default value when field type is wrong
 macro_rules! deserialize_default {
     ($func_name:ident, $return_type:ty) => {
@@ -1906,7 +1753,6 @@ macro_rules! deserialize_default {
         }
     };
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct GroupPeer {
     #[serde(
@@ -1940,7 +1786,6 @@ pub struct GroupPeer {
     )]
     pub login_name: String,
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct GroupUser {
     #[serde(
@@ -1950,7 +1795,6 @@ pub struct GroupUser {
     )]
     pub name: String,
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Group {
     #[serde(
@@ -1964,13 +1808,11 @@ pub struct Group {
     #[serde(default, deserialize_with = "deserialize_vec_grouppeer")]
     pub peers: Vec<GroupPeer>,
 }
-
 impl Group {
     fn path() -> PathBuf {
         let filename = format!("{}_group", APP_NAME.read().unwrap().clone());
         Config::path(filename)
     }
-
     pub fn store(json: String) {
         if let Ok(mut file) = std::fs::File::create(Self::path()) {
             let data = compress(json.as_bytes());
@@ -1984,7 +1826,6 @@ impl Group {
             }
         };
     }
-
     pub fn load() -> Self {
         if let Ok(mut file) = std::fs::File::open(Self::path()) {
             let mut data = vec![];
@@ -2001,12 +1842,10 @@ impl Group {
         Self::remove();
         Self::default()
     }
-
     pub fn remove() {
         std::fs::remove_file(Self::path()).ok();
     }
 }
-
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct TrustedDevice {
     pub hwid: Bytes,
@@ -2015,14 +1854,12 @@ pub struct TrustedDevice {
     pub name: String,
     pub platform: String,
 }
-
 impl TrustedDevice {
     pub fn outdate(&self) -> bool {
         const DAYS_90: i64 = 90 * 24 * 60 * 60 * 1000;
         self.time + DAYS_90 < crate::get_time()
     }
 }
-
 deserialize_default!(deserialize_string, String);
 deserialize_default!(deserialize_bool, bool);
 deserialize_default!(deserialize_i32, i32);
@@ -2039,7 +1876,6 @@ deserialize_default!(deserialize_size, Size);
 deserialize_default!(deserialize_hashmap_string_string, HashMap<String, String>);
 deserialize_default!(deserialize_hashmap_string_bool,  HashMap<String, bool>);
 deserialize_default!(deserialize_hashmap_resolutions, HashMap<String, Resolution>);
-
 #[inline]
 fn get_or(
     a: &RwLock<HashMap<String, String>>,
@@ -2054,7 +1890,6 @@ fn get_or(
         .or(c.read().unwrap().get(k))
         .cloned()
 }
-
 #[inline]
 fn is_option_can_save(
     overwrite: &RwLock<HashMap<String, String>>,
@@ -2069,7 +1904,6 @@ fn is_option_can_save(
     }
     true
 }
-
 #[inline]
 pub fn is_incoming_only() -> bool {
     HARD_SETTINGS
@@ -2078,7 +1912,6 @@ pub fn is_incoming_only() -> bool {
         .get("conn-type")
         .map_or(false, |x| x == ("incoming"))
 }
-
 #[inline]
 pub fn is_outgoing_only() -> bool {
     HARD_SETTINGS
@@ -2087,7 +1920,6 @@ pub fn is_outgoing_only() -> bool {
         .get("conn-type")
         .map_or(false, |x| x == ("outgoing"))
 }
-
 #[inline]
 fn is_some_hard_opton(name: &str) -> bool {
     HARD_SETTINGS
@@ -2096,32 +1928,26 @@ fn is_some_hard_opton(name: &str) -> bool {
         .get(name)
         .map_or(false, |x| x == ("Y"))
 }
-
 #[inline]
 pub fn is_disable_tcp_listen() -> bool {
     is_some_hard_opton("disable-tcp-listen")
 }
-
 #[inline]
 pub fn is_disable_settings() -> bool {
     is_some_hard_opton("disable-settings")
 }
-
 #[inline]
 pub fn is_disable_ab() -> bool {
     is_some_hard_opton("disable-ab")
 }
-
 #[inline]
 pub fn is_disable_account() -> bool {
     is_some_hard_opton("disable-account")
 }
-
 #[inline]
 pub fn is_disable_installation() -> bool {
     is_some_hard_opton("disable-installation")
 }
-
 // This function must be kept the same as the one in flutter and sciter code.
 // flutter: flutter/lib/common.dart -> option2bool()
 // sciter: Does not have the function, but it should be kept the same.
@@ -2138,7 +1964,6 @@ pub fn option2bool(option: &str, value: &str) -> bool {
         value != "N"
     }
 }
-
 pub mod keys {
     pub const OPTION_VIEW_ONLY: &str = "view_only";
     pub const OPTION_SHOW_MONITORS_TOOLBAR: &str = "show_monitors_toolbar";
@@ -2214,7 +2039,6 @@ pub mod keys {
     pub const OPTION_ENABLE_ANDROID_SOFTWARE_ENCODING_HALF_SCALE: &str =
         "enable-android-software-encoding-half-scale";
     pub const OPTION_ENABLE_TRUSTED_DEVICES: &str = "enable-trusted-devices";
-
     // buildin options
     pub const OPTION_DISPLAY_NAME: &str = "display-name";
     pub const OPTION_DISABLE_UDP: &str = "disable-udp";
@@ -2232,7 +2056,6 @@ pub mod keys {
     pub const OPTION_ONE_WAY_CLIPBOARD_REDIRECTION: &str = "one-way-clipboard-redirection";
     pub const OPTION_ALLOW_LOGON_SCREEN_PASSWORD: &str = "allow-logon-screen-password";
     pub const OPTION_ONE_WAY_FILE_TRANSFER: &str = "one-way-file-transfer";
-
     // flutter local options
     pub const OPTION_FLUTTER_REMOTE_MENUBAR_STATE: &str = "remoteMenubarState";
     pub const OPTION_FLUTTER_PEER_SORTING: &str = "peer-sorting";
@@ -2242,27 +2065,22 @@ pub mod keys {
     pub const OPTION_FLUTTER_PEER_CARD_UI_TYLE: &str = "peer-card-ui-type";
     pub const OPTION_FLUTTER_CURRENT_AB_NAME: &str = "current-ab-name";
     pub const OPTION_ALLOW_REMOTE_CM_MODIFICATION: &str = "allow-remote-cm-modification";
-
     // android floating window options
     pub const OPTION_DISABLE_FLOATING_WINDOW: &str = "disable-floating-window";
     pub const OPTION_FLOATING_WINDOW_SIZE: &str = "floating-window-size";
     pub const OPTION_FLOATING_WINDOW_UNTOUCHABLE: &str = "floating-window-untouchable";
     pub const OPTION_FLOATING_WINDOW_TRANSPARENCY: &str = "floating-window-transparency";
     pub const OPTION_FLOATING_WINDOW_SVG: &str = "floating-window-svg";
-
     // android keep screen on
     pub const OPTION_KEEP_SCREEN_ON: &str = "keep-screen-on";
-
     pub const OPTION_DISABLE_GROUP_PANEL: &str = "disable-group-panel";
     pub const OPTION_PRE_ELEVATE_SERVICE: &str = "pre-elevate-service";
-
     // proxy settings
     // The following options are not real keys, they are just used for custom client advanced settings.
     // The real keys are in Config2::socks.
     pub const OPTION_PROXY_URL: &str = "proxy-url";
     pub const OPTION_PROXY_USERNAME: &str = "proxy-username";
     pub const OPTION_PROXY_PASSWORD: &str = "proxy-password";
-
     // DEFAULT_DISPLAY_SETTINGS, OVERWRITE_DISPLAY_SETTINGS
     pub const KEYS_DISPLAY_SETTINGS: &[&str] = &[
         OPTION_VIEW_ONLY,
@@ -2361,7 +2179,6 @@ pub mod keys {
         OPTION_ENABLE_ANDROID_SOFTWARE_ENCODING_HALF_SCALE,
         OPTION_ENABLE_TRUSTED_DEVICES,
     ];
-
     // BUILDIN_SETTINGS
     pub const KEYS_BUILDIN_SETTINGS: &[&str] = &[
         OPTION_DISPLAY_NAME,
@@ -2382,7 +2199,6 @@ pub mod keys {
         OPTION_ONE_WAY_FILE_TRANSFER,
     ];
 }
-
 pub fn common_load<
     T: serde::Serialize + serde::de::DeserializeOwned + Default + std::fmt::Debug,
 >(
@@ -2390,15 +2206,12 @@ pub fn common_load<
 ) -> T {
     Config::load_::<T>(suffix)
 }
-
 pub fn common_store<T: serde::Serialize>(config: &T, suffix: &str) {
     Config::store_(config, suffix);
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_serialize() {
         let cfg: Config = Default::default();
@@ -2408,7 +2221,6 @@ mod tests {
         let res = toml::to_string_pretty(&cfg);
         assert!(res.is_ok());
     }
-
     #[test]
     fn test_overwrite_settings() {
         DEFAULT_SETTINGS
@@ -2491,7 +2303,6 @@ mod tests {
         DEFAULT_SETTINGS.write().unwrap().clear();
         OVERWRITE_SETTINGS.write().unwrap().clear();
         CONFIG2.write().unwrap().options.clear();
-
         DEFAULT_LOCAL_SETTINGS
             .write()
             .unwrap()
@@ -2525,7 +2336,6 @@ mod tests {
         DEFAULT_LOCAL_SETTINGS.write().unwrap().clear();
         OVERWRITE_LOCAL_SETTINGS.write().unwrap().clear();
         LOCAL_CONFIG.write().unwrap().options.clear();
-
         DEFAULT_DISPLAY_SETTINGS
             .write()
             .unwrap()
@@ -2562,7 +2372,6 @@ mod tests {
         OVERWRITE_DISPLAY_SETTINGS.write().unwrap().clear();
         LOCAL_CONFIG.write().unwrap().options.clear();
     }
-
     #[test]
     fn test_config_deserialize() {
         let wrong_type_str = r#"
@@ -2582,7 +2391,6 @@ mod tests {
                 ..Default::default()
             })
         );
-
         let wrong_field_str = r#"
         hello = "world"
         key_confirmed = true
@@ -2596,7 +2404,6 @@ mod tests {
             })
         );
     }
-
     #[test]
     fn test_peer_config_deserialize() {
         let default_peer_config = toml::from_str::<PeerConfig>("").unwrap();
@@ -2612,7 +2419,6 @@ mod tests {
             cfg_to_compare.scroll_style = "scrollbar".to_string();
             let cfg = toml::from_str::<PeerConfig>(wrong_type_str);
             assert_eq!(cfg, Ok(cfg_to_compare), "Failed to test wrong_type_str");
-
             let wrong_type_str = r#"
             view_style = "adaptive"
             scroll_style = "scrollbar"
@@ -2625,7 +2431,6 @@ mod tests {
             cfg_to_compare.scroll_style = "scrollbar".to_string();
             let cfg = toml::from_str::<PeerConfig>(wrong_type_str);
             assert_eq!(cfg, Ok(cfg_to_compare), "Failed to test wrong_type_str");
-
             let wrong_field_str = r#"
             [custom_resolutions.0]
             w = 1920
@@ -2640,14 +2445,12 @@ mod tests {
             assert_eq!(cfg, Ok(cfg_to_compare), "Failed to test wrong_field_str");
         }
     }
-
     #[test]
     fn test_store_load() {
         let peerconfig_id = "123456789";
         let cfg: PeerConfig = Default::default();
         cfg.store(&peerconfig_id);
         assert_eq!(PeerConfig::load(&peerconfig_id), cfg);
-
         #[cfg(not(windows))]
         {
             use std::os::unix::fs::PermissionsExt;
