@@ -70,9 +70,13 @@ class DesktopSettingPage extends StatefulWidget {
         !bind.isDisableSettings() &&
         bind.mainGetBuildinOption(key: kOptionHideSecuritySetting) != 'Y')
       SettingsTabKey.safety,
-    if (!bind.isDisableSettings() &&
-        bind.mainGetBuildinOption(key: kOptionHideNetworkSetting) != 'Y')
-      SettingsTabKey.network,
+      
+    // ⬇️ 隐藏网络设置：将下面两行注释掉或直接删除 ⬇️
+    // if (!bind.isDisableSettings() &&
+    //     bind.mainGetBuildinOption(key: kOptionHideNetworkSetting) != 'Y')
+    //   SettingsTabKey.network,
+    // ⬆️ 隐藏网络设置结束 ⬆️
+
     if (!bind.isIncomingOnly()) SettingsTabKey.display,
     if (!isWeb && !bind.isIncomingOnly() && bind.pluginFeatureIsEnabled())
       SettingsTabKey.plugin,
